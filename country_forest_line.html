@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>近十年各省造林总面积统计</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .chart-footer {
+            padding: 12px 30px;
+            font-size: 13px;
+            color: #555;
+            background-color: #f9fcf9;
+            border-top: 1px solid #e0e6e0;
+            font-family: "Microsoft YaHei", sans-serif;
+            flex-shrink: 0;
+            line-height: 1.6;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #238b45;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+    
+    <div id="container" style="flex: 1; min-height: 0;"></div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>自2015年起，造林面积统计口径包括人工造林、飞播造林、新封山育林、退化林修复和人工更新。</div>
+        <div style="margin-top: 5px;"><span class="footer-label">数据来源：</span>国家统计局 (2015-2024年累计数据)</div>
+    </div>
+
+    <script type="text/javascript">
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        // 数据：从小到大排序
+        var names = ['上海市', '天津市', '海南省', '北京市', '江苏省', '浙江省', '西藏自治区', '宁夏回族自治区', '黑龙江省', '山东省', '辽宁省', '吉林省', '安徽省', '河南省', '青海省', '福建省', '重庆市', '新疆维吾尔自治区', '广西壮族自治区', '广东省', '江西省', '湖北省', '山西省', '甘肃省', '贵州省', '陕西省', '云南省', '四川省', '河北省', '湖南省', '内蒙古自治区'];
+        var values = [23.9, 73.62, 140.75, 228.13, 262.34, 516.58, 732.73, 904.91, 985.39, 1020.84, 1243.75, 1271.24, 1308.21, 1615.01, 1723.91, 1784.92, 2018.34, 2073.93, 2173.67, 2394.97, 2622.53, 2779.3, 3043.95, 3114.5, 3255.22, 3370.34, 3385.5, 3424.38, 3755.0, 4628.79, 5324.49];
+
+        option = {
+            backgroundColor: 'transparent',
+            
+            title: {
+                text: '近十年全国各省造林总面积排名',
+                subtext: '2015-2024年累计 (单位：千公顷)',
+                left: 'center', top: 20,
+                textStyle: { color: '#333', fontSize: 24, fontWeight: 'bold' },
+                subtextStyle: { fontSize: 13, color: '#666' }
+            },
+
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: '{b}<br/>十年累计: <b>{c}</b> 千公顷'
+            },
+
+            grid: {
+                left: '3%', right: '8%', bottom: '3%', top: '18%',
+                containLabel: true
+            },
+
+            xAxis: {
+                type: 'value',
+                name: '千公顷',
+                position: 'top', 
+                splitLine: { show: true, lineStyle: { type: 'dashed', color: '#eee' } },
+                axisLabel: { color: '#666' }
+            },
+
+            yAxis: {
+                type: 'category',
+                data: names,
+                axisLabel: { interval: 0, fontWeight: 'bold', fontSize: 14, color: '#333' },
+                axisTick: { show: false },
+                axisLine: { show: false }
+            },
+
+            // 【核心修改】只显示最后8个 (Top 8)
+            // 计算公式：start = (总数31 - 显示8) / 31 * 100 ≈ 74
+            dataZoom: [
+                {
+                    type: 'slider',
+                    yAxisIndex: 0,
+                    width: 12,
+                    height: '70%',
+                    right: 10,
+                    top: '20%',
+                    start: 74, // 从 74% 的位置开始显示，刚好剩下 Top 8
+                    end: 100,
+                    handleSize: '0%',
+                    fillerColor: '#a1d99b',
+                    borderColor: 'transparent',
+                    showDetail: false,
+                    brushSelect: false
+                },
+                {
+                    type: 'inside',
+                    yAxisIndex: 0,
+                    start: 74,
+                    end: 100,
+                    zoomOnMouseWheel: false,
+                    moveOnMouseWheel: true,
+                    moveOnMouseMove: true
+                }
+            ],
+
+            series: [
+                {
+                    name: '造林总面积',
+                    type: 'bar',
+                    data: values,
+                    barWidth: '65%', // 稍微加粗一点点，因为只有8个，宽一点好看
+                    label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{c}',
+                        color: '#238b45',
+                        fontSize: 13,
+                        fontWeight: 'bold'
+                    },
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#a1d99b' },
+                            { offset: 1, color: '#006d2c' }
+                        ]),
+                        borderRadius: [0, 5, 5, 0]
+                    },
+                    emphasis: { itemStyle: { color: '#ffff00' } }
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

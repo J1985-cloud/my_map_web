@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>水资源总量及构成趋势图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 保持完全一致的底部注记风格 */
+        .chart-footer {
+            padding: 12px 30px;
+            font-size: 13px;
+            color: #555;
+            background-color: #f4f8fb; /* 淡蓝背景 */
+            border-top: 1px solid #dbe9f3;
+            font-family: "Microsoft YaHei", sans-serif;
+            flex-shrink: 0;
+            line-height: 1.6;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #0d47a1; /* 深蓝标题 */
+        }
+        .note-indent {
+            padding-left: 42px; 
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+    
+    <div id="container" style="flex: 1; min-height: 0;"></div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>1. 水资源总量 = 地表水资源量 + 地下水资源量 - 地表地下重复计算量。</div>
+        <div class="note-indent">2. 因此“总量”数值通常小于“地表”与“地下”之和，属正常统计现象。</div>
+        <div style="margin-top: 8px;"><span class="footer-label">数据来源：</span>国家统计局 (2015-2024年度统计数据)</div>
+    </div>
+
+    <script type="text/javascript">
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        // X轴：年份 (2015-2024)
+        var years = ['2015年', '2016年', '2017年', '2018年', '2019年', '2020年', '2021年', '2022年', '2023年', '2024年'];
+
+        // 数据：从CSV中提取并反转顺序(2015->2024)
+        var data_total = [27962.6, 32466.4, 28761.2, 27462.5, 29041.0, 31605.2, 29638.2, 27088.1, 25782.5, 31123.0];
+        var data_surface = [26900.8, 31273.9, 27746.3, 26323.2, 27993.3, 30407.0, 28310.5, 25984.4, 24633.5, 29895.6];
+        var data_ground = [7797.0, 8854.8, 8309.6, 8246.5, 8191.5, 8553.5, 8195.7, 7924.4, 7807.1, 8679.2];
+
+        option = {
+            backgroundColor: 'transparent',
+            
+            title: {
+                text: '2015-2024年全国水资源总量及构成趋势',
+                subtext: '单位：亿立方米',
+                left: 'center',
+                top: 20,
+                textStyle: { color: '#333', fontSize: 22, fontWeight: 'bold' },
+                subtextStyle: { fontSize: 13, color: '#666' }
+            },
+
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'line', lineStyle: { color: '#999', type: 'dashed' } },
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                borderColor: '#2196f3',
+                borderWidth: 1,
+                textStyle: { color: '#333' }
+            },
+
+            legend: {
+                data: ['水资源总量', '地表水资源量', '地下水资源量'],
+                top: 75,
+                itemGap: 20,
+                icon: 'circle'
+            },
+
+            grid: {
+                left: '4%', right: '4%', bottom: '5%', top: '25%',
+                containLabel: true
+            },
+
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: years,
+                axisLine: { lineStyle: { color: '#666' } }
+            },
+
+            yAxis: {
+                type: 'value',
+                name: '亿立方米',
+                min: 0,
+                // 让刻度更美观
+                axisLine: { show: true, lineStyle: { color: '#1565c0' } },
+                axisLabel: { color: '#1565c0', fontWeight: 'bold' },
+                splitLine: { show: true, lineStyle: { type: 'dashed', color: '#e3f2fd' } }
+            },
+
+            series: [
+                {
+                    name: '水资源总量',
+                    type: 'line',
+                    data: data_total,
+                    smooth: true,
+                    symbolSize: 8,
+                    itemStyle: { color: '#0d47a1' }, // 深蓝实线
+                    lineStyle: { width: 3, shadowColor: 'rgba(13, 71, 161, 0.3)', shadowBlur: 10 },
+                    // 标记最大值和最小值
+                    markPoint: {
+                        data: [
+                            {type: 'max', name: '最大值'},
+                            {type: 'min', name: '最小值'}
+                        ],
+                        itemStyle: { color: '#0d47a1' }
+                    }
+                },
+                {
+                    name: '地表水资源量',
+                    type: 'line',
+                    data: data_surface,
+                    smooth: true,
+                    symbol: 'emptyCircle',
+                    symbolSize: 6,
+                    itemStyle: { color: '#42a5f5' }, // 亮蓝
+                    lineStyle: { width: 2, type: 'dashed' } // 虚线，表示它是主要构成部分
+                },
+                {
+                    name: '地下水资源量',
+                    type: 'line',
+                    data: data_ground,
+                    smooth: true,
+                    symbol: 'none', // 不显示点，只显示趋势
+                    itemStyle: { color: '#26c6da' }, // 青色
+                    lineStyle: { width: 0 }, // 隐藏线，只看面积
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(38, 198, 218, 0.5)' },
+                            { offset: 1, color: 'rgba(38, 198, 218, 0.1)' }
+                        ])
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === 'object') {
+            myChart.setOption(option);
+        }
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>中国自然保护区时空分布图(大地琥珀版)</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        /* 风格大变：使用暖色调/亚麻色背景 */
+        .chart-footer {
+            padding: 12px 30px;
+            font-size: 13px;
+            color: #5d4037; /* 深褐色文字 */
+            background-color: #fff8e1; /* 极淡的米黄色背景 */
+            border-top: 1px solid #ffe0b2; /* 浅橙色边框 */
+            font-family: "Microsoft YaHei", sans-serif;
+            flex-shrink: 0;
+            line-height: 1.6;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #bf360c; /* 焦糖色标题 */
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+    
+    <div id="container" style="flex: 1; min-height: 0;"></div>
+    
+    <div id="loading" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#999; font-family: sans-serif;">
+        正在加载地图数据...
+    </div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>地图展示各省自然保护区“家底”；折线图反映国家级保护区近年的整合优化趋势。</div>
+        <div style="margin-top: 5px;"><span class="footer-label">数据来源：</span>国家统计局 (2023年年度数据)</div>
+    </div>
+
+    <script type="text/javascript">
+        document.oncontextmenu = function() { return false; };
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        myChart.showLoading();
+
+        $.get('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json', function (geoJson) {
+            
+            myChart.hideLoading();
+            document.getElementById('loading').style.display = 'none';
+            echarts.registerMap('china', geoJson);
+
+            option = {
+                backgroundColor: 'transparent',
+
+                // 【1. 标题配色：深褐色 + 焦糖色】
+                title: [
+                    {
+                        text: '2023年中国各省自然保护区数量分布',
+                        subtext: '单位：个',
+                        left: 'center', top: 20,
+                        textStyle: { color: '#3e2723', fontSize: 24, fontWeight: 'bold' },
+                        subtextStyle: { fontSize: 13, color: '#6d4c41' }
+                    },
+                    {
+                        text: '🍂 国家级自然保护区趋势',
+                        subtext: '单位：个',
+                        left: '2%', top: '10%',
+                        textStyle: { fontSize: 16, fontWeight: 'bold', color: '#bf360c' }, // 焦糖色
+                        subtextStyle: { fontSize: 12, color: '#5d4037' }
+                    }
+                ],
+
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#bf360c', borderWidth: 1, // 橙色边框
+                    textStyle: { color: '#3e2723' },
+                    formatter: function (params) {
+                        var marker = '<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:#bf360c;"></span>';
+                        if (params.seriesType === 'map') {
+                            if (isNaN(params.value)) return params.name + '<br/><span style="color:#999">数据暂缺</span>';
+                            return params.name + '<br/>' + marker + '数量: <b>' + params.value + '</b> 个';
+                        } else {
+                            return params.name + '<br/>' + marker + '国家级: <b>' + params.value + '</b> 个';
+                        }
+                    }
+                },
+
+                // 【2. 视觉映射：大地色系 (米黄 -> 橙 -> 深褐)】
+                visualMap: {
+                    type: 'piecewise',
+                    left: 30, bottom: 30,
+                    itemWidth: 20, itemHeight: 14,
+                    textGap: 10,
+                    textStyle: { color: '#3e2723' },
+                    seriesIndex: [0],
+                    pieces: [
+                        {min: 150, label: '> 150 (极多)', color: '#bf360c'}, // 深焦糖色
+                        {min: 100, max: 150, label: '100 - 150', color: '#d84315'}, // 砖红
+                        {min: 50, max: 100, label: '50 - 100', color: '#f57f17'},   // 琥珀黄
+                        {min: 20, max: 50, label: '20 - 50', color: '#ffb300'},    // 暖黄
+                        {max: 20, label: '< 20 (较少)', color: '#ffe082'}        // 浅米黄
+                    ]
+                },
+
+                graphic: [
+                    {
+                        type: 'group', right: 40, top: 80,
+                        children: [
+                            { type: 'circle', position: [0, 0], shape: { cx: 0, cy: 0, r: 25 }, style: { fill: '#fff', stroke: '#d7ccc8', lineWidth: 1, shadowBlur: 5, shadowColor: 'rgba(0,0,0,0.1)' } },
+                            { type: 'polygon', shape: { points: [[0, -20], [-6, 0], [6, 0]] }, style: { fill: '#bf360c' } }, // 北针用深橙色
+                            { type: 'polygon', shape: { points: [[0, 20], [-6, 0], [6, 0]] }, style: { fill: '#d7ccc8' } },
+                            { type: 'text', position: [0, -32], style: { text: 'N', font: 'bold 14px sans-serif', fill: '#5d4037', textAlign: 'center' } }
+                        ]
+                    },
+                    {
+                        type: 'group', right: 40, bottom: 30,
+                        children: [
+                            { type: 'text', position: [0, -20], style: { text: '0      250     500 km', font: '12px sans-serif', fill: '#5d4037' } },
+                            { type: 'rect', shape: { x: 0, y: 0, width: 40, height: 6 }, style: { fill: '#5d4037' } },
+                            { type: 'rect', shape: { x: 40, y: 0, width: 40, height: 6 }, style: { fill: '#fff', stroke: '#5d4037', lineWidth:1 } },
+                            { type: 'rect', shape: { x: 80, y: 0, width: 40, height: 6 }, style: { fill: '#5d4037' } },
+                            { type: 'rect', shape: { x: 120, y:0, width: 6, height: 6 }, style: { fill: '#5d4037' } }
+                        ]
+                    }
+                ],
+
+                grid: {
+                    left: '2%', top: '18%', 
+                    width: '22%', height: '20%',
+                    containLabel: true
+                },
+                xAxis: { 
+                    type: 'category',
+                    data: ['2019年', '2020年', '2021年', '2023年', '2024年'],
+                    axisLine: { lineStyle: { color: '#8d6e63' } },
+                    axisLabel: { fontSize: 10, rotate: 30, color: '#5d4037' }
+                },
+                yAxis: { 
+                    type: 'value',
+                    splitLine: { show: false },
+                    axisLabel: { fontSize: 10, color: '#5d4037' },
+                    axisLine: { show: true, lineStyle: { color: '#8d6e63' } },
+                    min: 400
+                },
+
+                series: [
+                    // 【系列0：地图】
+                    {
+                        name: '保护区数量',
+                        type: 'map',
+                        map: 'china',
+                        roam: true,
+                        scaleLimit: { min: 0.8, max: 3 },
+                        zoom: 1.2,
+                        center: [104.114129, 37.550339],
+                        label: { show: false },
+                        itemStyle: {
+                            // 默认区域颜色：极浅的暖灰
+                            normal: { borderColor: '#a1887f', borderWidth: 0.5, areaColor: '#efebe9' },
+                            // 悬停高亮：明亮的琥珀色
+                            emphasis: { areaColor: '#ffca28', shadowBlur: 10, borderWidth: 1.5, borderColor: '#fff' }
+                        },
+                        data: [
+                            {name: '北京市', value: 20}, {name: '天津市', value: 8},
+                            {name: '河北省', value: 45}, {name: '山西省', value: 46},
+                            {name: '内蒙古自治区', value: 182}, {name: '辽宁省', value: 99},
+                            {name: '吉林省', value: 51}, {name: '黑龙江省', value: 160},
+                            {name: '上海市', value: 6}, {name: '江苏省', value: 31},
+                            {name: '浙江省', value: 66}, {name: '安徽省', value: 109},
+                            {name: '福建省', value: 92}, {name: '江西省', value: 180},
+                            {name: '山东省', value: 65}, {name: '河南省', value: 30},
+                            {name: '湖北省', value: 66}, {name: '湖南省', value: 118},
+                            {name: '广东省', value: 88}, {name: '广西壮族自治区', value: 78},
+                            {name: '海南省', value: 37}, {name: '重庆市', value: 58},
+                            {name: '四川省', value: 133}, {name: '贵州省', value: 82},
+                            {name: '云南省', value: 166}, {name: '西藏自治区', value: 47},
+                            {name: '陕西省', value: 61}, {name: '甘肃省', value: 56},
+                            {name: '青海省', value: 11}, {name: '宁夏回族自治区', value: 13},
+                            {name: '新疆维吾尔自治区', value: 33},
+                            {name: '台湾省', value: NaN}, {name: '香港特别行政区', value: NaN}, {name: '澳门特别行政区', value: NaN}
+                        ]
+                    },
+                    // 【系列1：折线图 - 古铜色风格】
+                    {
+                        name: '国家级保护区',
+                        type: 'line',
+                        data: [474, 474, 474, 449, 448], 
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        // 线条：深铜色
+                        lineStyle: { width: 3, color: '#bf360c', shadowColor: 'rgba(191, 54, 12, 0.4)', shadowBlur: 5 },
+                        itemStyle: { color: '#bf360c', borderColor: '#fff', borderWidth: 2 },
+                        areaStyle: {
+                            // 暖橙色渐变
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {offset: 0, color: 'rgba(191, 54, 12, 0.4)'},
+                                {offset: 1, color: 'rgba(191, 54, 12, 0.05)'}
+                            ])
+                        },
+                        label: { show: true, position: 'top', color: '#bf360c', fontSize: 11, fontWeight: 'bold' },
+                        z: 10
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+        });
+
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

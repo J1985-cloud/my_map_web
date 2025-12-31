@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>森林资源造林统计折线图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 底部注释样式：模仿公文/报表的严谨风格 */
+        .chart-footer {
+            padding: 15px 30px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.8;
+            background-color: #f8fcf8; /* 极淡的绿色背景 */
+            border-top: 2px solid #e0e0e0;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #333;
+        }
+        .note-indent {
+            padding-left: 28px; /* 第二行缩进，对齐序号 */
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column;">
+    
+    <div id="container" style="flex: 1; min-height: 450px;"></div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>1. 自2015年起造林面积包括人工造林、飞播造林、新封山育林、退化林修复和人工更新。</div>
+        <div class="note-indent">2. 自2019年起新封山育林指标名称改为封山育林。</div>
+    </div>
+
+    <script type="text/javascript">
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        // X轴：年份 (2015-2024)
+        var years = ['2015年', '2016年', '2017年', '2018年', '2019年', '2020年', '2021年', '2022年', '2023年', '2024年'];
+
+        // 数据：从你的新表格中提取
+        var data_artificial = [4362.59, 3823.66, 4295.89, 3677.95, 3458.32, 3000.06, 1085.1, 930.86, 1014.36, 797.68]; // 人工造林
+        var data_closing = [2152.88, 1953.64, 1657.17, 1785.07, 1898.31, 1774.61, 1235.1, 1057.32, 1133.1, 1267.03]; // 封山育林
+        var data_aerial = [128.39, 162.32, 141.22, 135.43, 125.57, 151.5, 172.24, 166.1, 67.0, 67.61]; // 飞机播种
+
+        option = {
+            backgroundColor: '#fff',
+            
+            title: {
+                text: '近年全国造林及封育情况统计趋势',
+                subtext: '人工造林 / 飞播造林 / 封山育林',
+                left: 'center',
+                top: 20,
+                textStyle: { color: '#2c3e50', fontSize: 22, fontWeight: 'bold' }
+            },
+
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } },
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                formatter: function (params) {
+                    var res = params[0].name + '<br/>';
+                    params.forEach(function (item) {
+                        res += '<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:' + item.color + ';"></span>';
+                        res += item.seriesName + ': <b>' + item.value + '</b> 千公顷<br/>';
+                    });
+                    return res;
+                }
+            },
+
+            legend: {
+                data: ['当年人工造林面积', '封山育林', '当年飞机播种面积'],
+                top: 70,
+                icon: 'roundRect'
+            },
+
+            grid: {
+                left: '4%', right: '4%', bottom: '5%', top: '22%',
+                containLabel: true
+            },
+
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: years,
+                axisLine: { lineStyle: { color: '#666' } }
+            },
+
+            yAxis: [
+                // 左轴：给大数值用的 (人工造林、封山育林)
+                {
+                    type: 'value',
+                    name: '面积 (千公顷)',
+                    position: 'left',
+                    min: 0,
+                    axisLine: { show: true, lineStyle: { color: '#238b45' } },
+                    axisLabel: { color: '#238b45', fontWeight: 'bold' },
+                    splitLine: { show: true, lineStyle: { type: 'dashed', color: '#eee' } }
+                },
+                // 右轴：给小数值用的 (飞机播种)
+                {
+                    type: 'value',
+                    name: '飞播面积 (千公顷)',
+                    position: 'right',
+                    min: 0,
+                    max: 200, // 固定一下最大值，让飞播的线在下面波动，不要喧宾夺主
+                    axisLine: { show: true, lineStyle: { color: '#2b8cbe' } },
+                    axisLabel: { color: '#2b8cbe', fontWeight: 'bold' },
+                    splitLine: { show: false }
+                }
+            ],
+
+            series: [
+                {
+                    name: '当年人工造林面积',
+                    type: 'line',
+                    yAxisIndex: 0, // 用左轴
+                    data: data_artificial,
+                    smooth: true, // 平滑曲线
+                    symbolSize: 8,
+                    itemStyle: { color: '#238b45' }, // 深绿
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(35, 139, 69, 0.3)' },
+                            { offset: 1, color: 'rgba(35, 139, 69, 0.05)' }
+                        ])
+                    },
+                    lineStyle: { width: 3 }
+                },
+                {
+                    name: '封山育林',
+                    type: 'line',
+                    yAxisIndex: 0, // 用左轴
+                    data: data_closing,
+                    smooth: true,
+                    symbol: 'triangle',
+                    symbolSize: 8,
+                    itemStyle: { color: '#d95f0e' }, // 棕橙色
+                    lineStyle: { width: 3, type: 'dashed' } // 虚线表示“封育”这种比较自然的过程
+                },
+                {
+                    name: '当年飞机播种面积',
+                    type: 'line',
+                    yAxisIndex: 1, // 【注意】用右轴
+                    data: data_aerial,
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    itemStyle: { color: '#2b8cbe' }, // 天蓝色
+                    lineStyle: { width: 2 }
+                }
+            ]
+        };
+
+        if (option && typeof option === 'object') {
+            myChart.setOption(option);
+        }
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

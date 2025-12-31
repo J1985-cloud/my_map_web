@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>福建省水资源综合概览</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        .chart-footer {
+            padding: 12px 30px;
+            font-size: 13px;
+            color: #555;
+            background-color: #f4f8fb;
+            border-top: 1px solid #dbe9f3;
+            font-family: "Microsoft YaHei", sans-serif;
+            flex-shrink: 0;
+            line-height: 1.6;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+    
+    <div id="container" style="flex: 1; min-height: 0;"></div>
+    <div id="loading" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#999; font-family: sans-serif;">
+        正在加载地图数据...
+    </div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>全省水资源总量分布不均（南平最多，沿海最少）；用水结构中，农业用水占比最高(58.1%)，生态用水逐年提升。</div>
+        <div style="margin-top: 5px;"><span class="footer-label">数据来源：</span>《2023年福建省水资源公报》</div>
+    </div>
+
+    <script type="text/javascript">
+        document.oncontextmenu = function() { return false; };
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        myChart.showLoading();
+
+        $.get('https://geo.datav.aliyun.com/areas_v3/bound/350000_full.json', function (geoJson) {
+            
+            myChart.hideLoading();
+            document.getElementById('loading').style.display = 'none';
+            echarts.registerMap('fujian', geoJson);
+
+            option = {
+                backgroundColor: 'transparent',
+
+                title: [
+                    { 
+                        text: '2023年福建省各设区市水资源总量',
+                        left: 'center', 
+                        top: 25, 
+                        textStyle: { color: '#333', fontSize: 24, fontWeight: 'bold' }
+                    },
+                    { 
+                        text: '💧 全省用水结构',
+                        subtext: '总用水量占比(%)',
+                        left: '2%', top: '8%',
+                        textStyle: { fontSize: 15, fontWeight: 'bold', color: '#0d47a1' },
+                        subtextStyle: { fontSize: 11 }
+                    }
+                ],
+
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#2196f3', borderWidth: 1,
+                    textStyle: { color: '#333' },
+                    formatter: function (params) {
+                        if (params.seriesType === 'map') {
+                            if (isNaN(params.value)) return params.name + '<br/><span style="color:#999">数据暂缺</span>';
+                            return params.name + '<br/>水资源总量: <b>' + params.value + '</b> 亿m³';
+                        } else {
+                            return params.name + '<br/>占比: <b>' + params.value + '%</b> (' + params.percent + '%)';
+                        }
+                    }
+                },
+
+                visualMap: {
+                    type: 'piecewise',
+                    left: 30, bottom: 30,
+                    itemWidth: 20, itemHeight: 14,
+                    textGap: 10,
+                    textStyle: { color: '#333' },
+                    seriesIndex: [0], 
+                    pieces: [
+                        {min: 200, label: '> 200 (极丰富)', color: '#08306b'},
+                        {min: 150, max: 200, label: '150 - 200', color: '#2171b5'},
+                        {min: 100, max: 150, label: '100 - 150', color: '#6baed6'},
+                        {min: 50, max: 100, label: '50 - 100', color: '#bdd7e7'},
+                        {max: 50, label: '< 50 (匮乏)', color: '#eff3ff'}
+                    ]
+                },
+
+                graphic: [
+                    {
+                        type: 'group', right: 40, top: 80,
+                        children: [
+                            { type: 'circle', position: [0, 0], shape: { cx: 0, cy: 0, r: 25 }, style: { fill: '#fff', stroke: '#999', lineWidth: 1, shadowBlur: 5, shadowColor: 'rgba(0,0,0,0.2)' } },
+                            { type: 'polygon', shape: { points: [[0, -20], [-6, 0], [6, 0]] }, style: { fill: '#2196f3' } },
+                            { type: 'polygon', shape: { points: [[0, 20], [-6, 0], [6, 0]] }, style: { fill: '#ccc' } },
+                            { type: 'text', position: [0, -32], style: { text: 'N', font: 'bold 14px sans-serif', fill: '#333', textAlign: 'center' } }
+                        ]
+                    },
+                    {
+                        type: 'group', right: 40, bottom: 30,
+                        children: [
+                            { type: 'text', position: [0, -20], style: { text: '0      50     100 km', font: '12px sans-serif', fill: '#333' } },
+                            { type: 'rect', shape: { x: 0, y: 0, width: 40, height: 6 }, style: { fill: '#333' } },
+                            { type: 'rect', shape: { x: 40, y: 0, width: 40, height: 6 }, style: { fill: '#fff', stroke: '#333', lineWidth:1 } },
+                            { type: 'rect', shape: { x: 80, y: 0, width: 40, height: 6 }, style: { fill: '#333' } },
+                            { type: 'rect', shape: { x: 120, y:0, width: 6, height: 6 }, style: { fill: '#333' } }
+                        ]
+                    }
+                ],
+
+                series: [
+                    {
+                        name: '水资源总量',
+                        type: 'map',
+                        map: 'fujian',
+                        roam: true,
+                        scaleLimit: { min: 0.8, max: 3 },
+                        zoom: 1.2,
+                        center: [118.2, 26.3],
+                        label: { show: true, color: '#000', fontSize: 11 },
+                        itemStyle: {
+                            normal: { borderColor: '#999', borderWidth: 0.5, areaColor: '#f0f0f0' },
+                            emphasis: { areaColor: '#ffeb3b', shadowBlur: 10, borderWidth: 1.5, borderColor: '#fff' }
+                        },
+                        data: [
+                            {name: '南平市', value: 228.2}, {name: '三明市', value: 168.4},
+                            {name: '龙岩市', value: 135.5}, {name: '宁德市', value: 85.6},
+                            {name: '福州市', value: 83.8}, {name: '漳州市', value: 78.5},
+                            {name: '泉州市', value: 72.1}, {name: '莆田市', value: 37.6},
+                            {name: '厦门市', value: 12.3}, {name: '平潭综合实验区', value: 1.9}
+                        ]
+                    },
+                    // 【系列 1：左上角饼图 - 核心优化区】
+                    {
+                        name: '用水结构',
+                        type: 'pie',
+                        // 【优化1】稍微缩小一点半径，腾空间
+                        radius: ['11%', '17%'], 
+                        // 【优化2】中心点稍微往下、往右移，避开标题和屏幕边缘
+                        center: ['13%', '26%'], 
+                        avoidLabelOverlap: true, // 确保开启防重叠
+                        data: [
+                            {value: 58.1, name: '农业'},
+                            {value: 14.2, name: '工业'},
+                            {value: 17.8, name: '生活'},
+                            {value: 9.8, name: '生态'}
+                        ],
+                        label: {
+                            show: true,
+                            position: 'outside',
+                            // 【优化3】改为单行显示，减少垂直占用
+                            formatter: '{b} {d}%',
+                            // 【优化4】缩小字号
+                            fontSize: 10,
+                            fontWeight: 'bold',
+                            color: '#333'
+                        },
+                        // 【优化5】极致缩短引导线
+                        labelLine: { length: 3, length2: 4 },
+                        itemStyle: {
+                            borderRadius: 2,
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        },
+                        color: ['#66bb6a', '#42a5f5', '#ffa726', '#26c6da'],
+                        z: 10
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+        });
+
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

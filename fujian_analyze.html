@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>森林-水资源关联分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 保持一致的底部注记风格 */
+        .chart-footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: #555;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            font-family: "Microsoft YaHei", sans-serif;
+            line-height: 1.5;
+        }
+        .highlight { color: #238b45; font-weight: bold; }
+        .warning { color: #d95f0e; font-weight: bold; }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column;">
+    <div id="container" style="flex: 1;"></div>
+    
+    <div class="chart-footer">
+        <div>
+            <b>分析结论：</b>
+            处于<span class="highlight">右上角绿色区域</span>的城市（南平、三明）实现了生态与资源的双赢；
+            而<span class="warning">左下角橙色区域</span>的城市（厦门、平潭）则面临森林与水资源的双重压力。
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+
+        // 数据：[森林覆盖率(%), 人均水资源(m³), 城市名称, 气泡大小权重]
+        // 平均值约为：森林 56.26%, 水资源 2860 m³
+        var data = [
+            [79.21, 5031, '龙岩市', 135.5],
+            [78.89, 8676, '南平市', 228.2],
+            [77.12, 6932, '三明市', 168.4],
+            [59.70, 2711, '宁德市', 85.6],
+            [51.77, 985,  '福州市', 83.8],
+            [50.80, 1550, '漳州市', 78.5],
+            [48.50, 808,  '泉州市', 72.1],
+            [45.10, 1182, '莆田市', 37.6],
+            [41.50, 229,  '厦门市', 12.3],
+            [30.06, 498,  '平潭', 1.9]
+        ];
+
+        // 计算平均值用于画线
+        var meanForest = 56.2; 
+        var meanWater = 2860;
+
+        var option = {
+            backgroundColor: 'transparent',
+            
+            title: {
+                text: '福建省“森林-水资源”生态效应关联分析',
+                subtext: '气泡大小代表水资源总量',
+                left: 'center', top: 20,
+                textStyle: { fontSize: 22, fontWeight: 'bold', color: '#333' },
+                subtextStyle: { fontSize: 13, color: '#666' }
+            },
+
+            grid: { left: '8%', right: '12%', top: '20%', bottom: '12%', containLabel: true },
+
+            tooltip: {
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                borderColor: '#238b45', borderWidth: 1,
+                padding: 10,
+                formatter: function (obj) {
+                    var value = obj.value;
+                    return '<div style="font-size: 14px; font-weight:bold; color:#238b45; margin-bottom:5px;">' + value[2] + '</div>'
+                        + '森林覆盖率：<b>' + value[0] + '%</b><br>'
+                        + '人均水资源：<b>' + value[1] + ' m³</b>';
+                }
+            },
+
+            xAxis: {
+                name: '森林覆盖率 (%)',
+                nameTextStyle: { fontSize: 13, fontWeight: 'bold', color: '#555', padding: [0, 0, 0, 10] },
+                type: 'value',
+                min: 25, max: 85,
+                splitLine: { show: false }, // 去掉网格线，让背景色块更清晰
+                axisLine: { symbol: ['none', 'arrow'], lineStyle: { color: '#666' } },
+                axisLabel: { color: '#666' }
+            },
+
+            yAxis: {
+                name: '人均水资源 (m³)',
+                nameTextStyle: { fontSize: 13, fontWeight: 'bold', color: '#555', padding: [0, 0, 0, 20] },
+                type: 'value',
+                splitLine: { show: false },
+                axisLine: { symbol: ['none', 'arrow'], lineStyle: { color: '#666' } },
+                axisLabel: { color: '#666' }
+            },
+
+            series: [
+                {
+                    type: 'scatter',
+                    data: data,
+                    // 气泡大小
+                    symbolSize: function (data) {
+                        return Math.sqrt(data[3]) * 5 + 10;
+                    },
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(0,0,0,0.2)',
+                        shadowOffsetY: 5,
+                        // 气泡颜色：根据水资源多少，从深蓝到青绿
+                        color: function(params) {
+                             if (params.data[1] > 4000) return new echarts.graphic.RadialGradient(0.4, 0.3, 1, [{offset: 0, color: '#4fc3f7'}, {offset: 1, color: '#0288d1'}]); // 富水区(蓝)
+                             if (params.data[1] > 1000) return new echarts.graphic.RadialGradient(0.4, 0.3, 1, [{offset: 0, color: '#81c784'}, {offset: 1, color: '#2e7d32'}]); // 一般区(绿)
+                             return new echarts.graphic.RadialGradient(0.4, 0.3, 1, [{offset: 0, color: '#ffb74d'}, {offset: 1, color: '#f57c00'}]); // 缺水区(橙)
+                        }
+                    },
+                    label: {
+                        show: true,
+                        formatter: function (param) { return param.data[2]; },
+                        position: 'top',
+                        color: '#333',
+                        fontWeight: 'bold',
+                        fontSize: 12,
+                        distance: 5
+                    },
+                    
+                    // 【核心美化】平均线 + 象限背景
+                    markLine: {
+                        silent: true,
+                        symbol: 'none',
+                        lineStyle: { type: 'dashed', color: '#999', width: 1 },
+                        label: { show: true, position: 'end', formatter: '{b}', color: '#666' },
+                        data: [
+                            { xAxis: meanForest, name: '平均森林覆盖率' },
+                            { yAxis: meanWater, name: '平均人均水资源' }
+                        ]
+                    },
+                    markArea: {
+                        silent: true, // 鼠标放上去不触发事件
+                        data: [
+                            // 右上角：生态盈余区 (绿底)
+                            [
+                                { xAxis: meanForest, yAxis: meanWater, itemStyle: { color: 'rgba(35, 139, 69, 0.08)' } },
+                                { xAxis: 'max', yAxis: 'max' }
+                            ],
+                            // 左下角：生态赤字区 (红底)
+                            [
+                                { xAxis: 'min', yAxis: 'min', itemStyle: { color: 'rgba(230, 81, 0, 0.08)' } },
+                                { xAxis: meanForest, yAxis: meanWater }
+                            ]
+                        ]
+                    }
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

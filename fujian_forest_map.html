@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>福建省森林资源综合概览</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        .chart-footer {
+            padding: 12px 30px;
+            font-size: 13px;
+            color: #555;
+            background-color: #f9fcf9;
+            border-top: 1px solid #e0e6e0;
+            font-family: "Microsoft YaHei", sans-serif;
+            flex-shrink: 0;
+            line-height: 1.6;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #238b45;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+    
+    <div id="container" style="flex: 1; min-height: 0;"></div>
+    <div id="loading" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#999; font-family: sans-serif;">
+        正在加载地图数据...
+    </div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>三明、南平、龙岩三市森林蓄积量合计占全省近70%，是名副其实的“绿色金库”。</div>
+        <div style="margin-top: 5px;"><span class="footer-label">数据来源：</span>《2023年福建省生态环境状况公报》</div>
+    </div>
+
+    <script type="text/javascript">
+        document.oncontextmenu = function() { return false; };
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        myChart.showLoading();
+
+        $.get('https://geo.datav.aliyun.com/areas_v3/bound/350000_full.json', function (geoJson) {
+            
+            myChart.hideLoading();
+            document.getElementById('loading').style.display = 'none';
+            echarts.registerMap('fujian', geoJson);
+
+            option = {
+                backgroundColor: 'transparent',
+
+                // 【1. 双标题配置】
+                title: [
+                    { // 主标题
+                        text: '2023年福建省各设区市森林覆盖率',
+                        left: 'center', top: 20,
+                        textStyle: { color: '#333', fontSize: 24, fontWeight: 'bold' }
+                    },
+                    { // 小图表标题 (左上角)
+                        text: '🌲 森林蓄积量 Top 3',
+                        subtext: '单位：亿立方米',
+                        left: '2%', top: '10%', // 定位在左上角
+                        textStyle: { fontSize: 16, fontWeight: 'bold', color: '#238b45' },
+                        subtextStyle: { fontSize: 12 }
+                    }
+                ],
+
+                // 【2. 智能提示框】
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#238b45', borderWidth: 1,
+                    textStyle: { color: '#333' },
+                    formatter: function (params) {
+                        // 判断是地图还是柱状图
+                        if (params.seriesType === 'map') {
+                            if (isNaN(params.value)) return params.name + '<br/><span style="color:#999">数据暂缺</span>';
+                            return params.name + '<br/>森林覆盖率: <b>' + params.value + '%</b>';
+                        } else {
+                            // 柱状图提示
+                            return params.name + '<br/>森林蓄积量: <b>' + params.value + '</b> 亿m³';
+                        }
+                    }
+                },
+
+                // 【3. 小图表的坐标系 (Grid)】
+                grid: {
+                    left: '2%', top: '18%', 
+                    width: '20%', height: '20%', // 控制小图表的大小
+                    containLabel: true
+                },
+                xAxis: { 
+                    type: 'value', 
+                    show: false, // 隐藏X轴，让画面更干净
+                    splitLine: { show: false }
+                },
+                yAxis: { 
+                    type: 'category', 
+                    data: ['龙岩市', '南平市', '三明市'], // 排名数据
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    axisLabel: { color: '#333', fontWeight: 'bold', interval: 0 }
+                },
+
+                visualMap: {
+                    type: 'piecewise',
+                    left: 30, bottom: 30,
+                    itemWidth: 20, itemHeight: 14,
+                    textGap: 10,
+                    textStyle: { color: '#333' },
+                    seriesIndex: [0], // 【关键】只控制第0个系列(也就是地图)，不影响柱状图颜色
+                    pieces: [
+                        {min: 75, label: '> 75% (极高)', color: '#005a32'},
+                        {min: 60, max: 75, label: '60% - 75%', color: '#238b45'},
+                        {min: 50, max: 60, label: '50% - 60%', color: '#74c476'},
+                        {min: 40, max: 50, label: '40% - 50%', color: '#a1d99b'},
+                        {max: 40, label: '< 40%', color: '#e5f5e0'}
+                    ]
+                },
+
+                graphic: [
+                    {
+                        type: 'group', right: 40, top: 80,
+                        children: [
+                            { type: 'circle', position: [0, 0], shape: { cx: 0, cy: 0, r: 25 }, style: { fill: '#fff', stroke: '#999', lineWidth: 1, shadowBlur: 5, shadowColor: 'rgba(0,0,0,0.2)' } },
+                            { type: 'polygon', shape: { points: [[0, -20], [-6, 0], [6, 0]] }, style: { fill: '#ff4d4f' } },
+                            { type: 'polygon', shape: { points: [[0, 20], [-6, 0], [6, 0]] }, style: { fill: '#ccc' } },
+                            { type: 'text', position: [0, -32], style: { text: 'N', font: 'bold 14px sans-serif', fill: '#333', textAlign: 'center' } }
+                        ]
+                    },
+                    {
+                        type: 'group', right: 40, bottom: 30,
+                        children: [
+                            { type: 'text', position: [0, -20], style: { text: '0      50     100 km', font: '12px sans-serif', fill: '#333' } },
+                            { type: 'rect', shape: { x: 0, y: 0, width: 40, height: 6 }, style: { fill: '#333' } },
+                            { type: 'rect', shape: { x: 40, y: 0, width: 40, height: 6 }, style: { fill: '#fff', stroke: '#333', lineWidth:1 } },
+                            { type: 'rect', shape: { x: 80, y: 0, width: 40, height: 6 }, style: { fill: '#333' } },
+                            { type: 'rect', shape: { x: 120, y:0, width: 6, height: 6 }, style: { fill: '#333' } }
+                        ]
+                    }
+                ],
+
+                series: [
+                    // 【系列 0：地图】
+                    {
+                        name: '森林覆盖率',
+                        type: 'map',
+                        map: 'fujian',
+                        roam: true,
+                        scaleLimit: { min: 0.8, max: 3 },
+                        zoom: 1.2,
+                        center: [118.2, 26.3],
+                        label: { show: true, color: '#000', fontSize: 11 },
+                        itemStyle: {
+                            normal: { borderColor: '#797979', borderWidth: 0.5, areaColor: '#f3f3f3' },
+                            emphasis: { areaColor: '#ffff00', shadowBlur: 10, borderWidth: 1.5, borderColor: '#fff' }
+                        },
+                        data: [
+                            {name: '龙岩市', value: 79.21}, {name: '南平市', value: 78.89},
+                            {name: '三明市', value: 77.12}, {name: '宁德市', value: 59.70},
+                            {name: '福州市', value: 51.77}, {name: '漳州市', value: 50.80},
+                            {name: '泉州市', value: 48.50}, {name: '莆田市', value: 45.10},
+                            {name: '厦门市', value: 41.50}, {name: '平潭综合实验区', value: 30.06}
+                        ]
+                    },
+                    // 【系列 1：左上角柱状图】
+                    {
+                        name: '森林蓄积量',
+                        type: 'bar',
+                        data: [1.57, 2.05, 2.10], // 龙岩, 南平, 三明
+                        barWidth: 15, // 柱子细一点，精致
+                        label: { 
+                            show: true, position: 'right', 
+                            formatter: '{c}', // 只显示数字，单位在标题里了
+                            fontSize: 12, fontWeight: 'bold', color: '#238b45'
+                        },
+                        itemStyle: {
+                            // 独立的绿色渐变，不受 visualMap 影响
+                            color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                                {offset: 0, color: '#238b45'},
+                                {offset: 1, color: '#a1d99b'}
+                            ]),
+                            borderRadius: [0, 10, 10, 0]
+                        },
+                        z: 10 // 悬浮在地图上方
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+        });
+
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

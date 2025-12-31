@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>各省人均水资源量统计图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* 保持统一的底部注记风格 */
+        .chart-footer {
+            padding: 12px 30px;
+            font-size: 13px;
+            color: #555;
+            background-color: #f4f8fb; /* 淡蓝背景 */
+            border-top: 1px solid #dbe9f3;
+            font-family: "Microsoft YaHei", sans-serif;
+            flex-shrink: 0;
+            line-height: 1.6;
+        }
+        .footer-label {
+            font-weight: bold;
+            color: #0d47a1; /* 深蓝标题 */
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+    
+    <div id="container" style="flex: 1; min-height: 0;"></div>
+
+    <div class="chart-footer">
+        <div><span class="footer-label">注：</span>图表按人均水资源量由高到低排列。西藏自治区数值极大（>12万），为保证其他省份可见性，Y轴刻度跨度较大。</div>
+        <div style="margin-top: 5px;"><span class="footer-label">数据来源：</span>国家统计局 (2024年分省年度数据)</div>
+    </div>
+
+    <script type="text/javascript">
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        // 1. 数据准备：已按从大到小排序（High -> Low）
+        var names = ['西藏自治区', '青海省', '广西壮族自治区', '江西省', '海南省', '新疆维吾尔自治区', '云南省', '黑龙江省', '湖南省', '福建省', '四川省', '吉林省', '贵州省', '内蒙古自治区', '广东省', '浙江省', '湖北省', '重庆市', '安徽省', '辽宁省', '甘肃省', '陕西省', '江苏省', '山东省', '河南省', '河北省', '山西省', '北京市', '上海市', '天津市', '宁夏回族自治区'];
+        var values = [120272.1, 16151.6, 4914.3, 4568.5, 4205.6, 3929.9, 3774.4, 3322.0, 3185.3, 3168.1, 2909.9, 2907.2, 2509.0, 2429.3, 1843.4, 1818.6, 1573.3, 1472.5, 1453.3, 1282.5, 1062.0, 984.9, 582.1, 457.1, 426.2, 335.7, 332.8, 242.2, 215.0, 184.8, 178.3];
+
+        option = {
+            backgroundColor: 'transparent',
+            
+            title: {
+                text: '2024年各省人均水资源量排名',
+                subtext: '单位：立方米/人',
+                left: 'center',
+                top: 20,
+                textStyle: { color: '#333', fontSize: 22, fontWeight: 'bold' },
+                subtextStyle: { fontSize: 13, color: '#666' }
+            },
+
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: '{b}<br/>人均水资源: <b>{c}</b> m³'
+            },
+
+            grid: {
+                left: '3%',
+                right: '3%',
+                bottom: '8%', // 底部留给滚动条
+                top: '20%',
+                containLabel: true
+            },
+
+            // X 轴变成省份名字
+            xAxis: {
+                type: 'category',
+                data: names,
+                axisLabel: {
+                    interval: 0, // 强制显示所有标签
+                    rotate: 45,  // 文字倾斜，防止拥挤
+                    color: '#333',
+                    fontSize: 11
+                },
+                axisTick: { alignWithLabel: true }
+            },
+
+            // Y 轴变成数值
+            yAxis: {
+                type: 'value',
+                name: '立方米/人',
+                splitLine: { show: true, lineStyle: { type: 'dashed', color: '#eee' } }
+            },
+
+            // 滚动条放在底部 X 轴
+            dataZoom: [
+                {
+                    type: 'slider',
+                    xAxisIndex: 0, // 控制 X 轴
+                    height: 15,
+                    bottom: 10,
+                    start: 0,      // 从第 1 个开始看（左边）
+                    end: 50,       // 默认显示前 50% 的省份（约 15 个），避免柱子太细
+                    handleSize: '0%', // 隐藏手柄，纯滑动条样式
+                    fillerColor: '#b3d9ff',
+                    borderColor: 'transparent',
+                    showDetail: false
+                },
+                {
+                    type: 'inside',
+                    xAxisIndex: 0,
+                    start: 0,
+                    end: 50,
+                    zoomOnMouseWheel: false,
+                    moveOnMouseWheel: true
+                }
+            ],
+
+            series: [
+                {
+                    name: '人均水资源量',
+                    type: 'bar',
+                    data: values,
+                    barWidth: '60%',
+                    label: {
+                        show: true,
+                        position: 'top', // 数值显示在柱子头顶
+                        formatter: '{c}',
+                        color: '#0d47a1',
+                        fontSize: 12,
+                        rotate: 90,     // 数值也竖着放，节省空间
+                        align: 'left',
+                        verticalAlign: 'middle',
+                        distance: 10
+                    },
+                    itemStyle: {
+                        // 竖向渐变：上深下浅
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#08519c' }, // 顶部深蓝
+                            { offset: 1, color: '#6baed6' }  // 底部浅蓝
+                        ]),
+                        borderRadius: [5, 5, 0, 0] // 顶部圆角
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === 'object') {
+            myChart.setOption(option);
+        }
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

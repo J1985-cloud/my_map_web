@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>中国水资源总量专题地图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body style="height: 100%; margin: 0; overflow: hidden;">
+    
+    <div id="container" style="height: 100%"></div>
+
+    <div id="loading" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#999; font-family: sans-serif;">
+        正在加载地图数据...
+    </div>
+
+    <script type="text/javascript">
+        document.oncontextmenu = function() { return false; };
+        var dom = document.getElementById("container");
+        var myChart = echarts.init(dom);
+        var option;
+
+        myChart.showLoading();
+
+        $.get('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json', function (geoJson) {
+            
+            myChart.hideLoading();
+            document.getElementById('loading').style.display = 'none';
+
+            echarts.registerMap('china', geoJson);
+
+            option = {
+                backgroundColor: 'transparent',
+
+                title: {
+                    text: '2024年中国水资源总量空间分布图',
+                    // 使用 \n 换行，把单位、注记、来源都写在副标题里
+                    subtext: '数据来源：国家统计局 / 地图底图：阿里云DataV GeoAtlas',
+                    left: 'center',
+                    top: 20,
+                    itemGap: 15, // 主标题和副标题的间距
+                    textStyle: { 
+                        color: '#333', 
+                        fontSize: 26, 
+                        fontWeight: 'bold' 
+                    },
+                    subtextStyle: { 
+                        color: '#555', 
+                        fontSize: 13, 
+                        lineHeight: 20, // 行高，让多行文字不拥挤
+                        fontFamily: 'Microsoft YaHei'
+                    }
+                },
+
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#2196f3',
+                    borderWidth: 1,
+                    textStyle: { color: '#333' },
+                    formatter: function (params) {
+                        if (isNaN(params.value)) {
+                            return params.name + '<br/><span style="color:#999">数据暂缺</span>';
+                        }
+                        return params.name + '<br/>水资源总量: <b>' + params.value + '</b> 亿立方米';
+                    }
+                },
+
+                visualMap: {
+                    type: 'piecewise',
+                    left: 30,
+                    bottom: 30,
+                    itemWidth: 20,
+                    itemHeight: 14,
+                    textGap: 10,
+                    textStyle: { color: '#333' },
+                    pieces: [
+                        {min: 2000, label: '> 2000 (极丰富)', color: '#08306b'},
+                        {min: 1000, max: 2000, label: '1000 - 2000 (丰富)', color: '#2171b5'},
+                        {min: 500, max: 1000, label: '500 - 1000 (较丰富)', color: '#6baed6'},
+                        {min: 100, max: 500, label: '100 - 500 (一般)', color: '#bdd7e7'},
+                        {max: 100, label: '< 100 (匮乏)', color: '#eff3ff'}
+                    ]
+                },
+
+                graphic: [
+                    {
+                        type: 'group', right: 40, top: 80,
+                        children: [
+                            { type: 'circle', position: [0, 0], shape: { cx: 0, cy: 0, r: 25 }, style: { fill: '#fff', stroke: '#999', lineWidth: 1, shadowBlur: 5, shadowColor: 'rgba(0,0,0,0.2)' } },
+                            { type: 'polygon', shape: { points: [[0, -20], [-6, 0], [6, 0]] }, style: { fill: '#2196f3' } },
+                            { type: 'polygon', shape: { points: [[0, 20], [-6, 0], [6, 0]] }, style: { fill: '#ccc' } },
+                            { type: 'text', position: [0, -32], style: { text: 'N', font: 'bold 14px sans-serif', fill: '#333', textAlign: 'center' } }
+                        ]
+                    },
+                    {
+                        type: 'text', left: 30, bottom: 160, 
+                        style: { text: '图例\n\n(单位：亿立方米)', font: 'bold 16px Microsoft YaHei', fill: '#333' }
+                    },
+                    {
+                        type: 'group', right: 40, bottom: 30,
+                        children: [
+                            { type: 'text', position: [0, -20], style: { text: '0      250     500 km', font: '12px sans-serif', fill: '#333' } },
+                            { type: 'rect', shape: { x: 0, y: 0, width: 40, height: 6 }, style: { fill: '#333' } },
+                            { type: 'rect', shape: { x: 40, y: 0, width: 40, height: 6 }, style: { fill: '#fff', stroke: '#333', lineWidth:1 } },
+                            { type: 'rect', shape: { x: 80, y: 0, width: 40, height: 6 }, style: { fill: '#333' } },
+                            { type: 'rect', shape: { x: 120, y:0, width: 6, height: 6 }, style: { fill: '#333' } }
+                        ]
+                    }
+                ],
+
+                series: [
+                    {
+                        name: '水资源总量',
+                        type: 'map',
+                        map: 'china',
+                        roam: true,
+                        scaleLimit: { min: 0.8, max: 3 },
+                        zoom: 1.2,
+                        // 地图中心点，如果觉得标题挡住了地图，可以微调第二个数字(纬度)，数字越小地图越靠下
+                        center: [104.114129, 36.5], 
+                        
+                        label: { show: false },
+
+                        itemStyle: {
+                            normal: { borderColor: '#999', borderWidth: 0.5, areaColor: '#f0f0f0' },
+                            emphasis: { areaColor: '#ffeb3b', shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)', borderWidth: 1.5, borderColor: '#fff' }
+                        },
+                        
+                        data: [
+                            {name: '北京市', value: 52.9},
+                            {name: '天津市', value: 25.2},
+                            {name: '河北省', value: 247.9},
+                            {name: '山西省', value: 115.0},
+                            {name: '内蒙古自治区', value: 581.1},
+                            {name: '辽宁省', value: 534.6},
+                            {name: '吉林省', value: 676.8},
+                            {name: '黑龙江省', value: 1011.7},
+                            {name: '上海市', value: 53.4},
+                            {name: '江苏省', value: 496.3},
+                            {name: '浙江省', value: 1209.1},
+                            {name: '安徽省', value: 889.7},
+                            {name: '福建省', value: 1326.8},
+                            {name: '江西省', value: 2059.7},
+                            {name: '山东省', value: 461.7},
+                            {name: '河南省', value: 417.7},
+                            {name: '湖北省', value: 918.2},
+                            {name: '湖南省', value: 2087.5},
+                            {name: '广东省', value: 2349.1},
+                            {name: '广西壮族自治区', value: 2467.0},
+                            {name: '海南省', value: 439.7},
+                            {name: '重庆市', value: 469.8},
+                            {name: '四川省', value: 2434.4},
+                            {name: '贵州省', value: 969.1},
+                            {name: '云南省', value: 1760.4},
+                            {name: '西藏自治区', value: 4420.0},
+                            {name: '陕西省', value: 389.3},
+                            {name: '甘肃省', value: 261.4},
+                            {name: '青海省', value: 958.6},
+                            {name: '宁夏回族自治区', value: 13.0},
+                            {name: '新疆维吾尔自治区', value: 1025.9},
+                            {name: '台湾省', value: NaN},
+                            {name: '香港特别行政区', value: NaN},
+                            {name: '澳门特别行政区', value: NaN}
+                        ]
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+        });
+
+        window.addEventListener('resize', myChart.resize);
+    </script>
+</body>
+</html>

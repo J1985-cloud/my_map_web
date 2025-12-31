@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <title>生态底部栏</title>
+    <style>
+        /* --- 全局重置 --- */
+        body {
+            margin: 0;
+            padding: 40px; 
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background-color: transparent; 
+            
+            /* 垂直排列：文字在上，卡片在下 */
+            display: flex;
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            
+            height: 100%;
+            overflow: hidden; 
+        }
+
+        /* --- Slogan 区域 --- */
+        .slogan-container {
+            text-align: center;
+            margin-bottom: 35px; /* 与下方卡片的距离 */
+            animation: floatUp 1.2s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .slogan-main {
+            font-size: 24px;
+            font-weight: 300; /* 细字体显得更优雅 */
+            color: #2c3e50;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .slogan-sub {
+            font-size: 14px;
+            color: #238b45; /* 使用生态绿 */
+            font-weight: 600;
+            letter-spacing: 8px; /* 字间距拉大，更有仪式感 */
+            text-transform: uppercase;
+            
+            /* 呼吸动画 */
+            animation: breathe 3s infinite ease-in-out;
+        }
+
+        /* --- 核心容器：悬浮玻璃卡片 --- */
+        .footer-dock {
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+            padding: 25px 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            
+            /* 进场动画延迟一点点 */
+            animation: floatUp 1.2s ease-out 0.2s forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        /* --- 标题区域 --- */
+        .dock-title {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            margin-bottom: 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            
+            background: linear-gradient(135deg, #333 0%, #666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .dock-title::before, .dock-title::after {
+            content: "";
+            display: block;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ccc, transparent);
+        }
+
+        /* --- 链接网格 --- */
+        .link-grid {
+            display: flex;
+            gap: 50px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* --- 单个链接项 --- */
+        .link-item {
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-box svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+            transition: all 0.3s ease;
+        }
+
+        .link-text {
+            font-size: 13px;
+            color: #777;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        /* --- 色彩定义 --- */
+        .link-item.stats .icon-box { background-color: #f0f7ff; color: #0288d1; }
+        .link-item.stats:hover .icon-box { background: #0288d1; color: #fff; box-shadow: 0 8px 25px rgba(2, 136, 209, 0.4); }
+        .link-item.stats:hover .link-text { color: #0288d1; }
+
+        .link-item.forest .icon-box { background-color: #f1f8e9; color: #388e3c; }
+        .link-item.forest:hover .icon-box { background: #388e3c; color: #fff; box-shadow: 0 8px 25px rgba(56, 142, 60, 0.4); }
+        .link-item.forest:hover .link-text { color: #388e3c; }
+
+        .link-item.water .icon-box { background-color: #e0f7fa; color: #0097a7; }
+        .link-item.water:hover .icon-box { background: #0097a7; color: #fff; box-shadow: 0 8px 25px rgba(0, 151, 167, 0.4); }
+        .link-item.water:hover .link-text { color: #0097a7; }
+
+        .link-item.eco .icon-box { background-color: #e0f2f1; color: #00796b; }
+        .link-item.eco:hover .icon-box { background: #00796b; color: #fff; box-shadow: 0 8px 25px rgba(0, 121, 107, 0.4); }
+        .link-item.eco:hover .link-text { color: #00796b; }
+
+        .link-item.datav .icon-box { background-color: #f3e5f5; color: #8e24aa; }
+        .link-item.datav:hover .icon-box { background: #8e24aa; color: #fff; box-shadow: 0 8px 25px rgba(142, 36, 170, 0.4); }
+        .link-item.datav:hover .link-text { color: #8e24aa; }
+
+        .link-item:hover { transform: translateY(-5px); }
+
+        /* --- 动画定义 --- */
+        @keyframes floatUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes breathe {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); color: #2e7d32; } /* 变亮一点 */
+        }
+
+    </style>
+</head>
+<body>
+    
+    <div class="slogan-container">
+        <div class="slogan-main">每一片绿叶，都是对未来的承诺</div>
+        <div class="slogan-sub">—— 环境由我们共同守护 ——</div>
+    </div>
+
+    <div class="footer-dock">
+        <div class="dock-title">友情链接 · 生态矩阵</div>
+
+        <div class="link-grid">
+            <a href="http://www.stats.gov.cn/" target="_blank" class="link-item stats">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M4,19H20V21H4V19M6,13H9V17H6V13M11,9H14V17H11V9M16,5H19V17H16V5Z" /></svg></div>
+                <span class="link-text">国家统计局</span>
+            </a>
+            <a href="http://www.forestry.gov.cn/" target="_blank" class="link-item forest">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12,2L5,13H9V22H15V13H19L12,2Z" /></svg></div>
+                <span class="link-text">国家林草局</span>
+            </a>
+            <a href="http://www.mwr.gov.cn/" target="_blank" class="link-item water">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12,2C12,2 4,11 4,15.5C4,20.2 7.6,24 12,24C16.4,24 20,20.2 20,15.5C20,11 12,2 12,2Z" /></svg></div>
+                <span class="link-text">水利部</span>
+            </a>
+            <a href="https://www.mee.gov.cn/" target="_blank" class="link-item eco">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,13.8 19.4,15.5 18.4,16.9C17.7,15 16.2,13.6 14.3,12.9C14.7,12.3 15,11.7 15,11A3,3 0 0,0 12,8A3,3 0 0,0 9,11C9,11.7 9.3,12.3 9.7,12.9C7.8,13.6 6.3,15 5.6,16.9C4.6,15.5 4,13.8 4,12A8,8 0 0,1 12,4Z" /></svg></div>
+                <span class="link-text">生态环境部</span>
+            </a>
+            <a href="https://www.aliyun.com/product/datav" target="_blank" class="link-item datav">
+                <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M15,19L9,16.89V5L15,7.11M20.5,3C20.44,3 20.39,3 20.34,3L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21C3.55,21 3.61,21 3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3Z" /></svg></div>
+                <span class="link-text">DataV 支持</span>
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
